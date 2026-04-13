@@ -1,0 +1,11 @@
+# Validación Cruzada Anidada y el Sesgo de Selección
+
+En la experimentación algorítmica, reportar el rendimiento del mejor modelo tras evaluar un amplio espacio de hiperparámetros sobre un conjunto de validación introduce una falla sistemática: la sobreestimación optimista del rendimiento generalizado. Este fenómeno, conocido como sesgo de selección de modelo, es análogo al problema de comparaciones múltiples en estadística clásica.
+
+Si optimizas los hiperparámetros $\lambda$ buscando el mínimo de la función de pérdida empírica en un conjunto de validación ($L_{val}$), estás tratando a $L_{val}$ no solo como un evaluador, sino como parte de la función objetivo. La optimización $\arg\min_{\lambda} L_{val}(f_{\lambda})$ inevitablemente explotará la varianza aleatoria (el ruido) específica de esa partición de validación. Algunos modelos puntuarán alto por azar computacional, no por haber aprendido mejores representaciones estructurales. En consecuencia, el rendimiento en este conjunto deja de ser un estimador insesgado del error de generalización $E[L]$. 
+
+Para resolver esta dependencia, la metodología requiere la **Validación Cruzada Anidada** (*Nested Cross-Validation*). Este diseño emplea dos bucles ortogonales. 
+1. **Bucle interno (Optimización):** Para cada partición de entrenamiento del bucle externo, se ejecuta un proceso completo de validación cruzada para explorar el espacio de hiperparámetros. El objetivo aquí es encontrar el vector $\lambda^*$ óptimo de manera condicional a esa partición de entrenamiento específica.
+2. **Bucle externo (Estimación del Error):** El modelo ajustado con los hiperparámetros $\lambda^*$ seleccionados en el bucle interno se evalúa en el *fold* de prueba (previamente aislado). 
+
+La propiedad analítica crucial de la Validación Cruzada Anidada es que el bucle externo no evalúa un modelo con un conjunto estático de hiperparámetros. Lo que evalúa es el *proceso mismo de construcción y selección del modelo*. Cada iteración del bucle externo muy probablemente seleccionará un $\lambda^*$ distinto. El error promedio reportado al final no corresponde al error de "un" modelo final, sino que estima la capacidad de generalización del *pipeline* algorítmico cuando se expone a nuevos datos, bloqueando la filtración de información entre la búsqueda de hiperparámetros y la estimación empírica del riesgo.
